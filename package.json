@@ -1,0 +1,17 @@
+{
+  "name": "backend_project",
+  "version": "1.0.0",
+  "description": "A backend project for my resume.",
+  "keywords": [
+    "javascript",
+    "backend",
+    "mongodb"
+  ],
+  "license": "ISC",
+  "author": "Denish Murawala",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
