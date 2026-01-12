@@ -69,4 +69,76 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User registered successfully"));
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  // extract data from req body
+  // username or email
+  // find the user
+  // password check
+  // access and refresh token generation and send to user
+  // send refresh token in cookie and access token in json format
+
+  const { email, password } = req.body;
+
+  // 1️⃣ Validate input
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password are required");
+  }
+
+  // 2️⃣ Find user
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // 3️⃣ Check password
+
+  const isMatch = await user.isPasswordCorrect(password);
+  if (!isMatch) {
+    throw new ApiError(401, "Invalid credentials");
+  }
+
+  // 4️⃣ Generate tokens  // 🎯 Tokens from model methods
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  // 5️⃣ Save refresh token in DB
+  user.refreshToken = refreshToken;
+  await user.save({ validateBeforeSave: false });
+
+  // 6️⃣ Send refresh token in cookie
+  res.cookie("refreshtoken", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  // 7️⃣ Send access token in response
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { accessToken }, "Login successful"));
+});
+
+const logoutUser = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookie.refreshToken;
+
+  if (refreshToken) {
+    const user = await User.findOne({ refreshToken });
+    if (user) {
+      user.refreshToken = null;
+      await user.save({ validateBeforeSave: false });
+    }
+  }
+
+  res.clearCokkie("refreshToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Logged out successfully"));
+});
+
+export { registerUser, logoutUser, loginUser };
